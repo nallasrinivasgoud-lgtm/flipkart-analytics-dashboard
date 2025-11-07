@@ -56,9 +56,22 @@ if uploaded_file:
         st.plotly_chart(px.line(timeline, x="order_date", y="orders", markers=True,
                                 title="Orders Over Time"), use_container_width=True)
 
-    if "payment_type" in df.columns:
+        if "payment_type" in df.columns:
         st.subheader("💳 Payment Methods Used")
         pay = df["payment_type"].value_counts().reset_index()
         pay.columns = ["Payment Type", "Count"]
-        st.plotly_chart(px.pie(pay, names="Payment Type", values="Count",
-                               title="P
+        st.plotly_chart(
+            px.pie(
+                pay,
+                names="Payment Type",
+                values="Count",
+                title="Payment Methods Used"
+            ),
+            use_container_width=True
+        )
+
+    st.divider()
+    st.subheader("🧾 Data Preview")
+    st.dataframe(df.head(100))
+else:
+    st.info("👆 Upload a Flipkart CSV file to start analysis.")
