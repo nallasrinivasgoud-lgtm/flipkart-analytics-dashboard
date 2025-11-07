@@ -2,77 +2,95 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ---- PAGE SETTINGS ----
+# -------------------------------
+# ⚙️ Page Configuration
+# -------------------------------
 st.set_page_config(page_title="Flipkart Analytics Dashboard", layout="wide")
 
+# -------------------------------
+# 🏷️ Title and Description
+# -------------------------------
 st.title("📊 Flipkart Order Analytics Dashboard")
-st.write("Upload your Flipkart order data (CSV) to explore categories, revenue, and delivery times!")
+st.write(
+    """
+    Upload your Flipkart orders dataset to explore insights like:
+    - Most ordered categories  
+    - Spending patterns  
+    - Average delivery time  
+    - Payment methods used  
+    - Revenue by category  
+    """
+)
 
-# ---- FILE UPLOAD ----
-uploaded_file = st.file_uploader("📁 Upload CSV File", type=["csv"])
+# -------------------------------
+# 📁 File Upload
+# -------------------------------
+uploaded_file = st.file_uploader("📥 Upload your Flipkart Orders CSV file", type=["csv"])
 
-if uploaded_file:
+if uploaded_file is not None:
+    # Read CSV
     df = pd.read_csv(uploaded_file)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-    # Convert dates and calculate delivery days
+    # Convert dates
     if "order_date" in df.columns:
         df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
     if "delivery_date" in df.columns:
         df["delivery_date"] = pd.to_datetime(df["delivery_date"], errors="coerce")
+
+    # Calculate delivery days
+    if "order_date" in df.columns and "delivery_date" in df.columns:
         df["delivery_days"] = (df["delivery_date"] - df["order_date"]).dt.days
 
-    # Calculate total amount
+    # Total amount column
     if "price" in df.columns and "quantity" in df.columns:
         df["total_amount"] = df["price"] * df["quantity"]
 
-    # ---- METRICS ----
-    st.subheader("📈 Summary Metrics")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Orders", len(df))
-    c2.metric("Unique Customers", df["customer_id"].nunique() if "customer_id" in df.columns else "-")
-    c3.metric("Avg Delivery Days", round(df["delivery_days"].mean(), 2) if "delivery_days" in df.columns else "-")
-    c4.metric("Total Revenue (₹)", int(df["total_amount"].sum()) if "total_amount" in df.columns else 0)
+    # -------------------------------
+    # 📈 Summary Metrics
+    # -------------------------------
+    st.subheader("📌 Key Insights")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Orders", len(df))
+    col2.metric("Unique Customers", df["customer_id"].nunique() if "customer_id" in df.columns else "N/A")
+    col3.metric("Avg Delivery Days", round(df["delivery_days"].mean(), 2) if "delivery_days" in df.columns else "N/A")
+    col4.metric("Total Revenue (₹)", f"{df['total_amount'].sum():,.0f}" if "total_amount" in df.columns else "N/A")
 
     st.divider()
 
-    # ---- VISUALS ----
+    # -------------------------------
+    # 📊 Visualizations
+    # -------------------------------
     if "category" in df.columns:
         st.subheader("📦 Most Ordered Categories")
-        cat_counts = df["category"].value_counts().reset_index()
-        cat_counts.columns = ["category", "orders"]
-        st.plotly_chart(px.bar(cat_counts, x="orders", y="category", orientation="h",
-                               title="Most Ordered Categories"), use_container_width=True)
+        cat_count = df["category"].value_counts().reset_index()
+        cat_count.columns = ["Category", "Orders"]
+        st.plotly_chart(px.bar(cat_count, x="Category", y="Orders", color="Category", title="Orders by Category"), use_container_width=True)
 
     if "total_amount" in df.columns and "category" in df.columns:
         st.subheader("💰 Revenue by Category")
-        rev = df.groupby("category")["total_amount"].sum().reset_index()
-        st.plotly_chart(px.bar(rev, x="category", y="total_amount",
-                               title="Revenue by Category"), use_container_width=True)
+        revenue = df.groupby("category")["total_amount"].sum().reset_index().sort_values(by="total_amount", ascending=False)
+        st.plotly_chart(px.bar(revenue, x="category", y="total_amount", color="category", title="Revenue Distribution by Category"), use_container_width=True)
 
     if "order_date" in df.columns:
         st.subheader("📅 Orders Over Time")
-        timeline = df.groupby("order_date").size().reset_index(name="orders")
-        st.plotly_chart(px.line(timeline, x="order_date", y="orders", markers=True,
-                                title="Orders Over Time"), use_container_width=True)
+        orders_over_time = df.groupby("order_date").size().reset_index(name="Orders")
+        st.plotly_chart(px.line(orders_over_time, x="order_date", y="Orders", markers=True, title="Order Trend Over Time"), use_container_width=True)
 
-        if "payment_type" in df.columns:
+    if "payment_type" in df.columns:
         st.subheader("💳 Payment Methods Used")
-        pay = df["payment_type"].value_counts().reset_index()
-        pay.columns = ["Payment Type", "Count"]
-        st.plotly_chart(
-            px.pie(
-                pay,
-                names="Payment Type",
-                values="Count",
-                title="Payment Methods Used"
-            ),
-            use_container_width=True
-        )
+        payment_data = df["payment_type"].value_counts().reset_index()
+        payment_data.columns = ["Payment Type", "Count"]
+        st.plotly_chart(px.pie(payment_data, names="Payment Type", values="Count", title="Preferred Payment Methods"), use_container_width=True)
 
     st.divider()
-    st.subheader("🧾 Data Preview")
-    st.dataframe(df.head(100))
-else:
-    st.info("👆 Upload a Flipkart CSV file to start analysis.")
 
+    # -------------------------------
+    # 🧾 Data Table
+    # -------------------------------
+    st.subheader("🔍 Data Preview")
+    st.dataframe(df.head(20))
+
+else:
+    st.info("👆 Please upload a CSV file to start analyzing your Flipkart data.")
