@@ -75,3 +75,4 @@ if uploaded_file:
     st.dataframe(df.head(100))
 else:
     st.info("👆 Upload a Flipkart CSV file to start analysis.")
+
