@@ -10,7 +10,7 @@ st.set_page_config(page_title="Flipkart Analytics Dashboard", layout="wide")
 # -------------------------------
 # 🏷️ Title and Description
 # -------------------------------
-st.title("📊 Flipkart Order Analytics Dashboard")
+st.title("📊 Jashwanth Analytics Dashboard")
 st.write(
     """
     Upload your Flipkart orders dataset to explore insights like:
